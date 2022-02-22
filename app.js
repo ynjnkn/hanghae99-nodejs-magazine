@@ -1,9 +1,11 @@
 // [Libraries]
 const express = require("express");
 const mongoose = require("mongoose");
+const user = require("./models/user");
 
 
 // [Models]
+const User = require("./models/user");
 
 
 // [Functions]
@@ -33,45 +35,52 @@ router.get("/", (req, res) => {
 // [API] 회원가입
 router.post("/users/signup", async (req, res) => {
     const { userId, nickname, password, passwordCheck } = req.body;
-    console.log("req.body", req.body);
 
-    // 비밀번호와 비밀번호 확인 일치 여부
+    const existingUser = await User.findOne({
+        $or: [{ userId }, { nickname }],
+    }).exec();
+
+    // 비밀번호와 비밀번호 확인 일치 여부 확인
     if (password != passwordCheck) {
         return res
             .status(400)
             .json({ message: "비밀번호가 일치하지 않습니다." });
     }
-
-    // 닉네임 정규표현식 부합 여부
+    // 닉네임 정규표현식 부합 여부 확인
     else if (!nicknameRegExCheck(nickname)) {
         return res
             .status(400)
             .json({ message: "올바르지 않은 닉네임 형식입니다." });
     }
-
-    // 비밀번호 정규표현식 부합 여부
+    // 비밀번호 정규표현식 부합 여부 확인
     else if (!passwordRegExCheck(password)) {
         return res
             .status(400)
             .json({ message: "올바르지 않은 비밀번호 형식입니다." });
     }
-
-    // 비밀번호가 닉네임을 포함하는지 여부
+    // 비밀번호가 닉네임을 포함하는지 여부 확인
     else if (password.includes(nickname)) {
         return res
             .status(400)
             .json({ message: "비밀번호가 닉네임을 포함할 수 없습니다." });
     }
-
-    // 모든 조건을 통과한 경우
+    // 사용 중인 닉네임 또는 이메일이 있는지 여부 확인
+    else if (existingUser) {
+        return res
+            .status(400)
+            .json({ message: "이미 사용 중인 userId 또는 nickname입니다." });
+    }
+    // 회원가입 실행
     else {
-        
+        const newUser = new User({
+            userId, nickname, password,
+        });
+        await newUser.save();
+
         return res
             .status(200)
             .json({ message: "회원가입 API 실행" });
-    }
-
-
+    };
 });
 
 
