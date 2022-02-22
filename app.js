@@ -20,7 +20,11 @@ const { nicknameRegExCheck, passwordRegExCheck } = require("./regEx");
 
 
 // [DB]
-mongoose.connect("mongodb://localhost/hanghae99-nodejs-magazine", {
+// mongoose.connect("mongodb://localhost/hanghae99-nodejs-magazine", {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+// });
+mongoose.connect("mongodb://3.39.25.252//hanghae99-nodejs-magazine", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
