@@ -1,11 +1,17 @@
 // [Libraries]
 const express = require("express");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 
 
 // [Models]
 const User = require("./models/user");
+const Post = require("./models/post");
+
+
+// [Middlewares]
+const authMiddleware = require("./middlewares/auth-middleware");
 
 
 // [Functions]
@@ -25,7 +31,7 @@ const app = express();
 const router = express.Router();
 const port = 3000;
 
-app.use("/api", express.urlencoded({ extended: false }), router);
+app.use("/api", bodyParser.json(), router);
 app.use(express.static("assets"));
 
 router.get("/", (req, res) => {
@@ -119,6 +125,21 @@ router.get("/posts", async (req, res) => {
             posts: "posts",
             message: "게시물 목록 조회 성공",
         })
+})
+
+// [API] 게시글 추가
+router.post("/posts", authMiddleware, async (req, res) => {
+    const writer = res.locals.user.userId;
+    const { images, desc } = req.body;
+
+    const newPost = new Post({
+        writer, images, desc,
+    })
+    await newPost.save();
+
+    res
+        .status(200)
+        .json({ message: "게시글 추가 성공" });
 })
 
 app.listen(port, () => {

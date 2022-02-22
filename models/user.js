@@ -11,4 +11,7 @@ const UserSchema = new mongoose.Schema({
 // UserSchema.set("toJSON", {
 //     virtuals: true,
 // });
+// const User = mongoose.model("User", UserSchema);
+// module.exports = { User };
+
 module.exports = mongoose.model("User", UserSchema);
