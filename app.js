@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 
 // [Models]
@@ -31,12 +32,14 @@ const app = express();
 const router = express.Router();
 const port = 3000;
 
+app.use(cors());
 app.use("/api", bodyParser.json(), router);
-app.use(express.static("assets"));
+// app.use(express.static("assets"));
 
 router.get("/", (req, res) => {
     res.send();
 });
+
 
 // [API] 회원가입
 router.post("/users/signup", async (req, res) => {
@@ -90,6 +93,7 @@ router.post("/users/signup", async (req, res) => {
     };
 });
 
+
 // [API] 로그인
 router.post("/users/signin", async (req, res) => {
     const { userId, password } = req.body;
@@ -115,17 +119,52 @@ router.post("/users/signin", async (req, res) => {
         });
 });
 
+
+// [API] 사용자 인증
+router.get("/users/me", authMiddleware, async (req, res) => {
+    const { user } = res.locals;
+
+    if (!user) {
+        return res
+            .status(401)
+            .json({ message: "사용자 인증 실패" });
+    }
+    return res
+        .status(200)
+        .json({
+            message: "사용자 인증 성공",
+            user: {
+                userId: user.userId,
+                nickname: user.nickname,
+            },
+        });
+});
+
+
+// [API] 중복 로그인, 회원가입 페이지 접근 방지
+// router.get("/users/me", authMiddleware, async (req, res) => {
+//     const { user } = res.locals;
+//     if (user) {
+//         return res
+//             .json({
+//                 message: "이미 로그인이 되어있습니다.",
+//             })
+//     }
+// });
+
+
 // [API] 게시글 목록 조회
 router.get("/posts", async (req, res) => {
-    // DB에서 게시글들 불러오기
+    const posts = await Post.find().sort("-createdAt").exec();
 
     res
         .status(200)
         .json({
-            posts: "posts",
+            posts,
             message: "게시물 목록 조회 성공",
         })
 })
+
 
 // [API] 게시글 추가
 router.post("/posts", authMiddleware, async (req, res) => {
@@ -141,6 +180,7 @@ router.post("/posts", authMiddleware, async (req, res) => {
         .status(200)
         .json({ message: "게시글 추가 성공" });
 })
+
 
 app.listen(port, () => {
     console.log(`서버 실행 @ ${port} 포트`);

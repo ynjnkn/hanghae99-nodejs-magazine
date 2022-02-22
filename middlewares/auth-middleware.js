@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
@@ -17,13 +16,6 @@ module.exports = (req, res, next) => {
         const { userId } = jwt.verify(authToken, "whitenoise");
         User.findOne({ userId })
             .then((user) => {
-                if (!user) {
-                    return res
-                        .status(401)
-                        .json({
-                            message: "존재하지 않는 사용자 입니다.",
-                        })
-                }
                 res.locals.user = user;
                 next();
             });
