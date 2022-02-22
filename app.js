@@ -1,7 +1,7 @@
 // [Libraries]
 const express = require("express");
 const mongoose = require("mongoose");
-const user = require("./models/user");
+const jwt = require("jsonwebtoken");
 
 
 // [Models]
@@ -68,7 +68,7 @@ router.post("/users/signup", async (req, res) => {
     else if (existingUser) {
         return res
             .status(400)
-            .json({ message: "이미 사용 중인 userId 또는 nickname입니다." });
+            .json({ message: "이미 사용 중인 아이디 또는 닉네임 입니다." });
     }
     // 회원가입 실행
     else {
@@ -77,12 +77,49 @@ router.post("/users/signup", async (req, res) => {
         });
         await newUser.save();
 
+        console.log("회원가입 성공");
         return res
             .status(200)
-            .json({ message: "회원가입 API 실행" });
+            .json({ message: "회원가입 성공" });
     };
 });
 
+// [API] 로그인
+router.post("/users/signin", async (req, res) => {
+    const { userId, password } = req.body;
+    const user = await User.findOne({ userId, password }).exec();
+
+    if (!user || password != user.password) {
+        return res
+            .status(400)
+            .json({ message: "잘못된 아이디 또는 비밀번호 입니다." });
+    }
+
+    const token = jwt.sign(
+        { userId: user.userId },
+        "whitenoise",
+        { expiresIn: 1 * 1000 * 60 * 60 });
+
+    console.log("로그인 성공");
+    res
+        .status(200)
+        .json({
+            message: "로그인 성공",
+            token,
+        });
+});
+
+// [API] 게시글 목록 조회
+router.get("/posts", async (req, res) => {
+    // DB에서 게시글들 불러오기
+
+    res
+        .status(200)
+        .json({
+            posts: "posts",
+            message: "게시물 목록 조회 성공",
+        })
+})
 
 app.listen(port, () => {
     console.log(`서버 실행 @ ${port} 포트`);
