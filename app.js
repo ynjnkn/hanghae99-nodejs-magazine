@@ -22,7 +22,7 @@ app.use("/api", express.urlencoded({ extended: false }), router);
 app.use(express.static("assets"));
 
 router.get("/", (req, res) => {
-    res.send("메인페이지2");
+    res.send("git pull test @ git bash 3");
 });
 
 app.listen(port, () => {
