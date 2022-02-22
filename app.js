@@ -21,7 +21,9 @@ const port = 3000;
 app.use("/api", express.urlencoded({ extended: false }), router);
 app.use(express.static("assets"));
 
-
+router.get("/", (req, res) => {
+    res.send("메인페이지");
+});
 
 app.listen(port, () => {
     console.log(`서버 실행 @ ${port} 포트`);
