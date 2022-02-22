@@ -22,7 +22,7 @@ app.use("/api", express.urlencoded({ extended: false }), router);
 app.use(express.static("assets"));
 
 router.get("/", (req, res) => {
-    res.send("git pull test @ git bash 4");
+    res.send("git pull test @ git bash 5");
 });
 
 app.listen(port, () => {
