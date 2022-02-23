@@ -142,28 +142,44 @@ router.get("/users/me", authMiddleware, async (req, res) => {
 });
 
 
-// [API] 중복 로그인, 회원가입 페이지 접근 방지
-// router.get("/users/me", authMiddleware, async (req, res) => {
-//     const { user } = res.locals;
-//     if (user) {
-//         return res
-//             .json({
-//                 message: "이미 로그인이 되어있습니다.",
-//             })
-//     }
-// });
-
-
 // [API] 게시글 목록 조회
 router.get("/posts", async (req, res) => {
     const posts = await Post.find().sort("-createdAt").exec();
+    const postIds = posts.map((post) => post._id.toHexString());
 
+    // const likesByLikedPostId = await Like.find({ likedPostId: { $in: postIds }, })
+    const likesByLikedPostId = await Like.find({ likedPostId: postIds })
+        .exec()
+        .then((likes) =>
+            likes.reduce(
+                (acc, like) => {
+                    const key = like.likedPostId;
+                    if (!acc[key]) {
+                        acc[key] = [];
+                    }
+                    acc[key].push(like);
+                    return acc;
+                }, {}
+            )
+        );
+
+    const tempPosts = posts.map(async (tempPost) => {
+        return {
+            writer: tempPost.writer,
+            date: tempPost.date,
+            images: tempPost.images,
+            desc: tempPost.desc,
+            likeCount: likesByLikedPostId[tempPost._id] ? likesByLikedPostId[tempPost._id].length : 0,
+            // isLiked
+        }
+    })
+
+    const result = await Promise.all(tempPosts);
     res
         .status(200)
         .json({
-            // 좋아요 정보 추가 필요 []
-            posts,
-            message: "게시물 목록 조회 성공",
+            message: "게시물 조회 성공",
+            posts: result,
         })
 })
 
@@ -187,6 +203,8 @@ router.post("/posts", authMiddleware, async (req, res) => {
 // [API] 게시글 좋아요/좋아요 취소
 router.post("/posts/:postId/like", authMiddleware, async (req, res) => {
     const { userId } = res.locals.user;
+    // postId를 req.params로 받으면 상세페이지에서만 API 동작 
+    // 메인페이지에서도 API 동작하려면 req.body로 받아야 함 (협의 필요)
     const { postId } = req.params;
 
     if (!postId) {

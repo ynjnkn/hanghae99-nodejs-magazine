@@ -1,13 +1,19 @@
 const mongoose = require("mongoose");
 
-const PostsSchema = new mongoose.Schema(
-    {
-        writer: String,
-        images: {
-            type: [String],
-            default: undefined,
-        },
-        desc: String,
-    }, { timestamps: true });
+const PostSchema = new mongoose.Schema({
+    writer: String,
+    images: {
+        type: [String],
+        default: undefined,
+    },
+    desc: String,
+}, { timestamps: true });
 
-module.exports = mongoose.model('Post', PostsSchema);
+PostSchema.virtual("date").get(function () {
+    return this.createdAt.toISOString();
+});
+PostSchema.set("toJSON", {
+    virtuals: true,
+});
+
+module.exports = mongoose.model('Post', PostSchema);
