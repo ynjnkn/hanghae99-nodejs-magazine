@@ -9,6 +9,7 @@ const cors = require("cors");
 // [Models]
 const User = require("./models/user");
 const Post = require("./models/post");
+const Like = require("./models/like");
 
 
 // [Middlewares]
@@ -160,6 +161,7 @@ router.get("/posts", async (req, res) => {
     res
         .status(200)
         .json({
+            // 좋아요 정보 추가 필요 []
             posts,
             message: "게시물 목록 조회 성공",
         })
@@ -181,6 +183,36 @@ router.post("/posts", authMiddleware, async (req, res) => {
         .json({ message: "게시글 추가 성공" });
 })
 
+
+// [API] 게시글 좋아요/좋아요 취소
+router.post("/posts/:postId/like", authMiddleware, async (req, res) => {
+    const { userId } = res.locals.user;
+    const { postId } = req.params;
+
+    if (!postId) {
+        return res
+            .status(400)
+            .json({ message: "게시글 좋아요(취소) 실패" });
+    }
+
+    const existingLikedPost = await Like
+        .findOne({ likeUserId: userId }, { likedPostId: postId })
+        .exec();
+
+    if (!existingLikedPost) {
+        const newLike = new Like({ likeUserId: userId, likedPostId: postId });
+        await newLike.save();
+        return res
+            .status(200)
+            .json({ message: "게시글 좋아요 성공" });
+    }
+    else {
+        await Like.findOneAndDelete({ likeUserId: userId }, { likedPostId: postId }).exec();
+        return res
+            .status(200)
+            .json({ message: "게시글 좋아요 취소 성공" });
+    }
+});
 
 app.listen(port, () => {
     console.log(`서버 실행 @ ${port} 포트`);
