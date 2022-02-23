@@ -6,11 +6,7 @@ module.exports = (req, res, next) => {
     const [authType, authToken] = (authorization || "").split(" ");
 
     if (!authToken || authType !== "Bearer") {
-        return res
-            .status(401)
-            .json({
-                message: "로그인 후 이용 가능합니다.",
-            });
+        next();
     }
     try {
         const { userId } = jwt.verify(authToken, "whitenoise");
@@ -20,9 +16,8 @@ module.exports = (req, res, next) => {
                 next();
             });
     } catch (err) {
-        console.log("로그인 후 이용 가능합니다.");
         res.status(401).send({
-            message: "로그인 후 이용 가능합니다.",
+            message: "토큰 디코딩 오류",
         });
     }
 }

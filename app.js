@@ -14,6 +14,7 @@ const Like = require("./models/like");
 
 // [Middlewares]
 const authMiddleware = require("./middlewares/auth-middleware");
+const isLikedMiddleware = require("./middlewares/isLiked-middleware");
 
 
 // [Functions]
@@ -143,11 +144,17 @@ router.get("/users/me", authMiddleware, async (req, res) => {
 
 
 // [API] 게시글 목록 조회
-router.get("/posts", async (req, res) => {
+router.get("/posts", isLikedMiddleware, async (req, res) => {
+    // const { userId } = res.locals.user;
     const posts = await Post.find().sort("-createdAt").exec();
     const postIds = posts.map((post) => post._id.toHexString());
 
-    // const likesByLikedPostId = await Like.find({ likedPostId: { $in: postIds }, })
+    // if (userId) {
+    //     console.log("userId", userId);
+    // }
+
+
+    // likesByLikedPostId = {post1: [{like1}, {like2} ... ], post2: [{like1}, {like2}], ... ]}
     const likesByLikedPostId = await Like.find({ likedPostId: postIds })
         .exec()
         .then((likes) =>
@@ -214,7 +221,7 @@ router.post("/posts/:postId/like", authMiddleware, async (req, res) => {
     }
 
     const existingLikedPost = await Like
-        .findOne({ likeUserId: userId }, { likedPostId: postId })
+        .findOne({ likeUserId: userId, likedPostId: postId })
         .exec();
 
     if (!existingLikedPost) {
@@ -225,7 +232,7 @@ router.post("/posts/:postId/like", authMiddleware, async (req, res) => {
             .json({ message: "게시글 좋아요 성공" });
     }
     else {
-        await Like.findOneAndDelete({ likeUserId: userId }, { likedPostId: postId }).exec();
+        await Like.deleteOne({ likeUserId: userId, likedPostId: postId }).exec();
         return res
             .status(200)
             .json({ message: "게시글 좋아요 취소 성공" });
