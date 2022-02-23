@@ -19,6 +19,13 @@ const isLikedMiddleware = require("./middlewares/isLiked-middleware");
 
 // [Functions]
 const { nicknameRegExCheck, passwordRegExCheck } = require("./regEx");
+async function isLiked(postId, userId) {
+    if (!userId) {
+        return false;
+    }
+    const alreadyLiked = (await Like.findOne({ likeUserId: userId, likedPostId: postId }).exec()) ? true : false;
+    return alreadyLiked;
+}
 
 
 // [DB]
@@ -145,14 +152,12 @@ router.get("/users/me", authMiddleware, async (req, res) => {
 
 // [API] 게시글 목록 조회
 router.get("/posts", isLikedMiddleware, async (req, res) => {
-    // const { userId } = res.locals.user;
-    const posts = await Post.find().sort("-createdAt").exec();
+    let userId = null;
+    if (res.locals.user) {
+        userId = res.locals.user.userId;
+    }
+    let posts = await Post.find().sort("-createdAt").exec();
     const postIds = posts.map((post) => post._id.toHexString());
-
-    // if (userId) {
-    //     console.log("userId", userId);
-    // }
-
 
     // likesByLikedPostId = {post1: [{like1}, {like2} ... ], post2: [{like1}, {like2}], ... ]}
     const likesByLikedPostId = await Like.find({ likedPostId: postIds })
@@ -177,16 +182,17 @@ router.get("/posts", isLikedMiddleware, async (req, res) => {
             images: tempPost.images,
             desc: tempPost.desc,
             likeCount: likesByLikedPostId[tempPost._id] ? likesByLikedPostId[tempPost._id].length : 0,
-            // isLiked
+            isLiked: await isLiked(tempPost._id, userId),
         }
     })
 
-    const result = await Promise.all(tempPosts);
+    posts = await Promise.all(tempPosts);
+
     res
         .status(200)
         .json({
             message: "게시물 조회 성공",
-            posts: result,
+            posts,
         })
 })
 

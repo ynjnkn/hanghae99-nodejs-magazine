@@ -6,7 +6,9 @@ module.exports = (req, res, next) => {
     const [authType, authToken] = (authorization || "").split(" ");
 
     if (!authToken || authType !== "Bearer") {
+        res.locals.user = null;
         next();
+        return;
     }
     try {
         const { userId } = jwt.verify(authToken, "whitenoise");
